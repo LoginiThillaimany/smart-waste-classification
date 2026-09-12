@@ -1,0 +1,35 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# --- Virtual environments ---
+venv/
+env/
+.venv/
+
+# --- Datasets (never commit raw/processed images) ---
+data/
+*.zip
+*.tar.gz
+
+# --- Model checkpoints & weights ---
+*.h5
+*.keras
+*.pt
+*.pth
+*.onnx
+
+# --- Experiment logs (keep figures — they are rubric evidence) ---
+experiments/*.log
+
+# --- OS / editor noise ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- Environment secrets ---
+.env
+kaggle.json

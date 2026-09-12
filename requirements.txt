@@ -1,0 +1,28 @@
+# Deep learning framework
+# NOTE: PyTorch is used instead of TensorFlow because TensorFlow dropped native
+# Windows GPU support after v2.10 (GPU training requires WSL2 from 2.11 onward).
+# PyTorch has native Windows CUDA support, matching the team's Windows dev machines.
+--extra-index-url https://download.pytorch.org/whl/cu130
+torch==2.12.1
+torchvision==0.21.0
+torchaudio==2.12.1
+
+# Data handling & scientific computing
+numpy==1.26.4
+pandas==2.2.2
+scikit-learn==1.4.2
+
+# Visualization
+matplotlib==3.8.4
+seaborn==0.13.2
+
+# Image processing
+opencv-python==4.9.0.80
+pillow==10.3.0
+imagehash==4.3.1
+
+# Dataset acquisition
+kaggle==1.6.14
+
+# Development environment
+jupyterlab==4.2.0
