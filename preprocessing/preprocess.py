@@ -32,7 +32,7 @@ RANDOM_SEED = 42
 IMG_SIZE = 224
 DEFAULT_BATCH_SIZE = 16
 
-RAW_DIR = Path("data/raw")
+RAW_DIR = Path("data/raw/garbage_classification")
 CONSOLIDATED_DIR = Path("data/consolidated")
 SPLIT_DIR = Path("data/split")
 
