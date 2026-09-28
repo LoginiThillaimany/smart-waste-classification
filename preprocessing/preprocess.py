@@ -32,7 +32,7 @@ RANDOM_SEED = 42
 IMG_SIZE = 224
 DEFAULT_BATCH_SIZE = 16
 
-RAW_DIR = Path("data/raw")
+RAW_DIR = Path("data/raw/garbage_classification")
 CONSOLIDATED_DIR = Path("data/consolidated")
 SPLIT_DIR = Path("data/split")
 
@@ -150,7 +150,7 @@ eval_transform = transforms.Compose([
 ])
 
 
-def get_loaders(root: Path = SPLIT_DIR, batch_size: int = DEFAULT_BATCH_SIZE):
+def get_loaders(root: Path = SPLIT_DIR, batch_size: int = DEFAULT_BATCH_SIZE, num_workers: int = 0):
     """
     Returns (train_loader, val_loader, test_loader, class_names).
 
@@ -161,9 +161,9 @@ def get_loaders(root: Path = SPLIT_DIR, batch_size: int = DEFAULT_BATCH_SIZE):
     val_ds = datasets.ImageFolder(str(root / "val"), transform=eval_transform)
     test_ds = datasets.ImageFolder(str(root / "test"), transform=eval_transform)
 
-    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=2)
-    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=2)
-    test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=2)
+    train_loader = DataLoader(train_ds, batch_size=batch_size, shuffle=True, num_workers=num_workers)
+    val_loader = DataLoader(val_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    test_loader = DataLoader(test_ds, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
     return train_loader, val_loader, test_loader, train_ds.classes
 
