@@ -40,9 +40,9 @@ The original 12 classes are consolidated into 6 target classes to align with sta
 | Field | Value |
 |---|---|
 | Total images (after consolidation) | 15,515 |
-| Image resolution range | *To be filled after EDA* |
-| Image formats present (jpg/png/etc.) | *To be filled after EDA* |
-| Color mode (RGB/grayscale/mixed) | *To be filled after EDA* |
+| Image resolution range | 51×100 to 888×936 (mean ~350×352) |
+| Image formats present (jpg/png/etc.) | JPEG, PNG |
+| Color mode (RGB/grayscale/mixed) | RGB (with some palette-mode 'P' images) |
 
 ## Class Distribution
 
@@ -61,10 +61,10 @@ The original 12 classes are consolidated into 6 target classes to align with sta
 
 | Issue | Count found | Action taken |
 |---|---|---|
-| Corrupted / unreadable files | *To be filled after EDA* | |
-| Duplicate images (exact) | *To be filled after EDA* | |
-| Near-duplicate images (perceptual hash) | *To be filled after EDA* | |
-| Mislabeled images (manually spot-checked) | *To be filled after EDA* | |
+| Corrupted / unreadable files | 0 | No action needed |
+| Duplicate images (exact) | N/A (covered by perceptual hash) | — |
+| Near-duplicate images (perceptual hash) | 294 groups (923 images) | Retained — removing could reduce class sizes further; noted as a limitation |
+| Mislabeled images (manually spot-checked) | Some cross-class duplicates found (e.g. Glass↔Residual) | Noted as a data quality limitation in the report |
 
 ## Access Instructions (for reproducibility)
 
