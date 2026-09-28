@@ -52,14 +52,16 @@ def set_seed(seed: int) -> None:
     torch.backends.cudnn.benchmark = False
 
 
-def train_one_epoch(model, loader, criterion, optimizer, device):
+def train_one_epoch(model, loader, criterion, optimizer, device, max_batches=None):
     """Run one training epoch. Returns (avg_loss, accuracy)."""
     model.train()
     running_loss = 0.0
     correct = 0
     total = 0
 
-    for imgs, labels in loader:
+    for i, (imgs, labels) in enumerate(loader):
+        if max_batches and i >= max_batches:
+            break
         imgs, labels = imgs.to(device), labels.to(device)
 
         optimizer.zero_grad()
@@ -78,7 +80,7 @@ def train_one_epoch(model, loader, criterion, optimizer, device):
     return avg_loss, accuracy
 
 
-def validate(model, loader, criterion, device):
+def validate(model, loader, criterion, device, max_batches=None):
     """Run validation. Returns (avg_loss, accuracy)."""
     model.eval()
     running_loss = 0.0
@@ -86,7 +88,9 @@ def validate(model, loader, criterion, device):
     total = 0
 
     with torch.no_grad():
-        for imgs, labels in loader:
+        for i, (imgs, labels) in enumerate(loader):
+            if max_batches and i >= max_batches:
+                break
             imgs, labels = imgs.to(device), labels.to(device)
             outputs = model(imgs)
             loss = criterion(outputs, labels)
@@ -101,16 +105,19 @@ def validate(model, loader, criterion, device):
     return avg_loss, accuracy
 
 
-def train():
+def train(epochs=None, max_batches=None, batch_size=None):
     """Main training function."""
     set_seed(RANDOM_SEED)
+
+    num_epochs = epochs if epochs is not None else EPOCHS
+    b_size = batch_size if batch_size is not None else BATCH_SIZE
 
     # Device
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device}")
 
     # Data
-    train_loader, val_loader, _, class_names = get_loaders(batch_size=BATCH_SIZE)
+    train_loader, val_loader, _, class_names = get_loaders(batch_size=b_size, num_workers=0)
     print(f"Classes: {class_names}")
     print(f"Train batches: {len(train_loader)} | Val batches: {len(val_loader)}")
 
@@ -126,7 +133,7 @@ def train():
     optimizer = optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(
         optimizer, mode="min", factor=LR_SCHEDULER_FACTOR,
-        patience=LR_SCHEDULER_PATIENCE, verbose=True,
+        patience=LR_SCHEDULER_PATIENCE,
     )
 
     # Checkpoint directory
@@ -143,20 +150,22 @@ def train():
     patience_counter = 0
 
     print(f"\n{'='*60}")
-    print(f"Training Custom CNN for up to {EPOCHS} epochs")
+    print(f"Training Custom CNN for up to {num_epochs} epochs")
     print(f"Early stopping patience: {EARLY_STOP_PATIENCE}")
+    if max_batches:
+        print(f"Max batches per epoch: {max_batches}")
     print(f"{'='*60}\n")
 
     start_time = time.time()
 
-    for epoch in range(1, EPOCHS + 1):
+    for epoch in range(1, num_epochs + 1):
         epoch_start = time.time()
 
         # Train
-        train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer, device)
+        train_loss, train_acc = train_one_epoch(model, train_loader, criterion, optimizer, device, max_batches)
 
         # Validate
-        val_loss, val_acc = validate(model, val_loader, criterion, device)
+        val_loss, val_acc = validate(model, val_loader, criterion, device, max_batches)
 
         # Get current LR
         current_lr = optimizer.param_groups[0]["lr"]
@@ -170,7 +179,7 @@ def train():
 
         epoch_time = time.time() - epoch_start
         print(
-            f"Epoch [{epoch:>3}/{EPOCHS}] "
+            f"Epoch [{epoch:>3}/{num_epochs}] "
             f"Train Loss: {train_loss:.4f} | Train Acc: {train_acc:.4f} | "
             f"Val Loss: {val_loss:.4f} | Val Acc: {val_acc:.4f} | "
             f"LR: {current_lr:.2e} | Time: {epoch_time:.1f}s"
@@ -184,7 +193,7 @@ def train():
             best_val_loss = val_loss
             patience_counter = 0
             torch.save(model.state_dict(), BEST_MODEL_PATH)
-            print(f"  ✓ Best model saved (val_loss={val_loss:.4f})")
+            print(f"  [+] Best model saved (val_loss={val_loss:.4f})")
         else:
             patience_counter += 1
             print(f"  No improvement ({patience_counter}/{EARLY_STOP_PATIENCE})")
@@ -213,4 +222,10 @@ def train():
 
 
 if __name__ == "__main__":
-    train()
+    import argparse
+    parser = argparse.ArgumentParser(description="Train Custom CNN")
+    parser.add_argument("--epochs", type=int, default=EPOCHS, help="Number of training epochs")
+    parser.add_argument("--batch-size", type=int, default=BATCH_SIZE, help="Batch size")
+    parser.add_argument("--max-batches", type=int, default=None, help="Max batches per epoch")
+    args = parser.parse_args()
+    train(epochs=args.epochs, max_batches=args.max_batches, batch_size=args.batch_size)
