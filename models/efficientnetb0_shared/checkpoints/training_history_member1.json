@@ -1,0 +1,24 @@
+{
+  "train_loss": [
+    1.0245915412902833,
+    0.5620153253277143
+  ],
+  "train_acc": [
+    0.65625,
+    0.8125
+  ],
+  "val_loss": [
+    1.1217532306909561,
+    0.7120529601971308
+  ],
+  "val_acc": [
+    0.6583333333333333,
+    0.7697916666666667
+  ],
+  "total_training_time_sec": 170.9533350467682,
+  "best_val_loss": 0.7120529601971308,
+  "epochs_trained": 2,
+  "device": "cpu",
+  "phase": "feature_extraction",
+  "member": "Member 1"
+}
