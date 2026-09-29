@@ -1,0 +1,119 @@
+{
+    "member": 3,
+    "model_name": "EfficientNetB0 (Fine-Tuned)",
+    "test_loss": 0.06084169764490122,
+    "test_accuracy": 0.9781491002570694,
+    "model_size_mb": 18.09455394744873,
+    "inference_latency_ms": 34.58858013153076,
+    "total_parameters": 4666498,
+    "trainable_parameters": 4666498,
+    "per_class_metrics": {
+        "Glass": {
+            "precision": 0.9539473684210527,
+            "recall": 0.9570957095709571,
+            "f1-score": 0.9555189456342669,
+            "support": 303.0
+        },
+        "Metal": {
+            "precision": 0.9557522123893806,
+            "recall": 0.9310344827586207,
+            "f1-score": 0.9432314410480349,
+            "support": 116.0
+        },
+        "Organic": {
+            "precision": 0.9483870967741935,
+            "recall": 0.9865771812080537,
+            "f1-score": 0.9671052631578947,
+            "support": 149.0
+        },
+        "Paper_Cardboard": {
+            "precision": 0.9896551724137931,
+            "recall": 0.9828767123287672,
+            "f1-score": 0.9862542955326461,
+            "support": 292.0
+        },
+        "Plastic": {
+            "precision": 0.9104477611940298,
+            "recall": 0.9312977099236641,
+            "f1-score": 0.9207547169811321,
+            "support": 131.0
+        },
+        "Residual": {
+            "precision": 0.9932735426008968,
+            "recall": 0.9895755770662695,
+            "f1-score": 0.9914211115255501,
+            "support": 1343.0
+        },
+        "accuracy": 0.9781491002570694,
+        "macro avg": {
+            "precision": 0.958577192298891,
+            "recall": 0.9630762288093888,
+            "f1-score": 0.9607142956465875,
+            "support": 2334.0
+        },
+        "weighted avg": {
+            "precision": 0.9783364702066633,
+            "recall": 0.9781491002570694,
+            "f1-score": 0.9782002771628774,
+            "support": 2334.0
+        }
+    },
+    "confusion_matrix": [
+        [
+            290,
+            3,
+            1,
+            1,
+            6,
+            2
+        ],
+        [
+            5,
+            108,
+            0,
+            0,
+            3,
+            0
+        ],
+        [
+            0,
+            0,
+            147,
+            0,
+            0,
+            2
+        ],
+        [
+            0,
+            0,
+            0,
+            287,
+            2,
+            3
+        ],
+        [
+            6,
+            0,
+            1,
+            0,
+            122,
+            2
+        ],
+        [
+            3,
+            2,
+            6,
+            2,
+            1,
+            1329
+        ]
+    ],
+    "class_names": [
+        "Glass",
+        "Metal",
+        "Organic",
+        "Paper_Cardboard",
+        "Plastic",
+        "Residual"
+    ]
+}
