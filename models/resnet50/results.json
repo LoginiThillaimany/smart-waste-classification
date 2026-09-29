@@ -1,0 +1,125 @@
+{
+  "accuracy": 0.9850042844901457,
+  "precision": 0.985295022808265,
+  "recall": 0.9850042844901457,
+  "f1": 0.9850626989908788,
+  "macro_precision": 0.9685583186652216,
+  "macro_recall": 0.977189605924624,
+  "macro_f1": 0.9726386458605152,
+  "per_class": {
+    "Glass": {
+      "precision": 0.9641693811074918,
+      "recall": 0.976897689768977,
+      "f1": 0.9704918032786886,
+      "support": 303
+    },
+    "Metal": {
+      "precision": 0.926829268292683,
+      "recall": 0.9827586206896551,
+      "f1": 0.9539748953974895,
+      "support": 116
+    },
+    "Organic": {
+      "precision": 0.961038961038961,
+      "recall": 0.9932885906040269,
+      "f1": 0.9768976897689768,
+      "support": 149
+    },
+    "Paper_Cardboard": {
+      "precision": 0.9930555555555556,
+      "recall": 0.9794520547945206,
+      "f1": 0.9862068965517242,
+      "support": 292
+    },
+    "Plastic": {
+      "precision": 0.968503937007874,
+      "recall": 0.9389312977099237,
+      "f1": 0.9534883720930233,
+      "support": 131
+    },
+    "Residual": {
+      "precision": 0.9977528089887641,
+      "recall": 0.9918093819806404,
+      "f1": 0.9947722180731889,
+      "support": 1343
+    }
+  },
+  "confusion_matrix": [
+    [
+      296,
+      5,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      2,
+      114,
+      0,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      148,
+      1,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      286,
+      3,
+      3
+    ],
+    [
+      6,
+      1,
+      1,
+      0,
+      123,
+      0
+    ],
+    [
+      3,
+      3,
+      4,
+      1,
+      0,
+      1332
+    ]
+  ],
+  "inference_time_per_image_sec": 0.016148353705778017,
+  "class_names": [
+    "Glass",
+    "Metal",
+    "Organic",
+    "Paper_Cardboard",
+    "Plastic",
+    "Residual"
+  ],
+  "roc_auc": 0.9992098998013388,
+  "roc_auc_per_class": [
+    0.998195462086829,
+    0.998631883336961,
+    0.9999232104188103,
+    0.9998339661626394,
+    0.9988409282276425,
+    0.9998339485751511
+  ],
+  "inference_time_isolated_sec": 0.033691348999273035,
+  "parameter_count": {
+    "total": 23520326,
+    "trainable": 23520326
+  },
+  "total_parameters": 23520326,
+  "trainable_parameters": 23520326,
+  "model_size_mb": 90.03,
+  "training_time_sec": 1919.0,
+  "training_time_note": "Original wall-clock 24785s was inflated by one epoch (22951s) due to system sleep; corrected estimate replaces it with ~85s"
+}
