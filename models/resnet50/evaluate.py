@@ -21,7 +21,7 @@ import torch
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from evaluation.metrics import evaluate_model, summarize_efficiency
+from evaluation.metrics import evaluate_model, measure_inference_time, summarize_efficiency
 from models.resnet50.config import BATCH_SIZE, CHECKPOINT_DIR, NUM_CLASSES, PHASE2_BEST_PATH
 from models.resnet50.resnet50_model import ResNet50Classifier
 from preprocessing.preprocess import get_loaders
@@ -110,6 +110,60 @@ def plot_confusion_matrix(cm: list, class_names: list, save_dir: Path = FIG_DIR)
     print(f"Saved: {save_dir / 'resnet50_confusion_matrix.png'}")
 
 
+def plot_misclassified_examples(model, loader, device: str, class_names: list, num_examples: int = 12, save_path: Path = FIG_DIR / "resnet50_misclassified_examples.png") -> None:
+    """Find and save a grid image of misclassified test examples (true vs predicted label)."""
+    model.eval()
+    misclassified = []
+
+    inv_mean = np.array([0.485, 0.456, 0.406])
+    inv_std = np.array([0.229, 0.224, 0.225])
+
+    with torch.no_grad():
+        for imgs, labels in loader:
+            imgs_dev = imgs.to(device)
+            outputs = model(imgs_dev)
+            preds = outputs.argmax(dim=1).cpu()
+
+            wrong_indices = (preds != labels).nonzero(as_tuple=True)[0]
+            for idx in wrong_indices:
+                img_tensor = imgs[idx]
+                # Unnormalize: (C, H, W) -> (H, W, C)
+                img_np = img_tensor.permute(1, 2, 0).numpy() * inv_std + inv_mean
+                img_np = np.clip(img_np, 0.0, 1.0)
+                misclassified.append((img_np, int(labels[idx]), int(preds[idx])))
+                if len(misclassified) >= num_examples:
+                    break
+            if len(misclassified) >= num_examples:
+                break
+
+    if not misclassified:
+        print("No misclassified examples found on test set!")
+        return
+
+    n_samples = len(misclassified)
+    cols = 4
+    rows = (n_samples + cols - 1) // cols
+    fig, axes = plt.subplots(rows, cols, figsize=(14, 3.5 * rows))
+    axes = np.array(axes).reshape(-1)
+
+    for i in range(len(axes)):
+        if i < n_samples:
+            img_np, true_label, pred_label = misclassified[i]
+            axes[i].imshow(img_np)
+            true_name = class_names[true_label] if true_label < len(class_names) else str(true_label)
+            pred_name = class_names[pred_label] if pred_label < len(class_names) else str(pred_label)
+            axes[i].set_title(f"True: {true_name}\nPred: {pred_name}", color="crimson", fontsize=10, fontweight="bold")
+            axes[i].axis("off")
+        else:
+            axes[i].axis("off")
+
+    plt.suptitle("ResNet50 — Misclassified Test Examples", fontsize=14, fontweight="bold")
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=150)
+    plt.close()
+    print(f"Saved: {save_path}")
+
+
 def evaluate():
     """Load best model, evaluate on test set, save results and plots."""
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -127,16 +181,32 @@ def evaluate():
     # Evaluate using shared metrics module
     results = evaluate_model(model, test_loader, device, class_names)
 
+    # Isolated inference time measurement (batch size 1, GPU synchronization)
+    isolated_lat = measure_inference_time(model, device)
+    results["inference_time_isolated_sec"] = isolated_lat
+
     # Print results
-    print(f"\n{'='*50}")
+    print(f"\n{'='*55}")
     print("ResNet50 — Test Set Results")
-    print(f"{'='*50}")
-    print(f"  Accuracy:  {results['accuracy']:.4f}")
-    print(f"  Precision: {results['precision']:.4f}")
-    print(f"  Recall:    {results['recall']:.4f}")
-    print(f"  F1-score:  {results['f1']:.4f}")
-    print(f"  ROC-AUC:   {results['roc_auc']}")
-    print(f"  Inference: {results['inference_time_per_image_sec']*1000:.2f} ms/image")
+    print(f"{'='*55}")
+    print(f"  Accuracy:         {results['accuracy']:.4f}")
+    print(f"  Weighted Prec:    {results['precision']:.4f}")
+    print(f"  Weighted Recall:  {results['recall']:.4f}")
+    print(f"  Weighted F1:      {results['f1']:.4f}")
+    print(f"  Macro Precision:  {results['macro_precision']:.4f}")
+    print(f"  Macro Recall:     {results['macro_recall']:.4f}")
+    print(f"  Macro F1-score:   {results['macro_f1']:.4f}")
+    print(f"  Macro ROC-AUC:    {results['roc_auc']:.4f}")
+    print(f"  Inference (loader): {results['inference_time_per_image_sec']*1000:.2f} ms/image")
+    print(f"  Inference (single): {results['inference_time_isolated_sec']*1000:.2f} ms/image")
+
+    print("\nPer-class Metrics:")
+    for name, m in results["per_class"].items():
+        print(f"  {name:<16} Precision: {m['precision']:.4f} | Recall: {m['recall']:.4f} | F1: {m['f1']:.4f} | Support: {m['support']}")
+
+    print("\nROC-AUC per class (One-vs-Rest):")
+    for name, auc_val in zip(class_names, results["roc_auc_per_class"]):
+        print(f"  {name:<16} ROC-AUC: {auc_val:.4f}")
 
     # Load training history for learning curves and efficiency
     history_path = Path(CHECKPOINT_DIR) / "training_history.json"
@@ -151,12 +221,17 @@ def evaluate():
 
     # Efficiency metrics
     efficiency = summarize_efficiency(model, training_time)
-    print(f"\n  Parameters: {efficiency['parameter_count']:,}")
-    print(f"  Model size: {efficiency['model_size_mb']} MB")
-    print(f"  Training time: {efficiency['training_time_sec']}s")
+    print(f"\nEfficiency Measures:")
+    print(f"  Total Parameters:     {efficiency['total_parameters']:,}")
+    print(f"  Trainable Parameters: {efficiency['trainable_parameters']:,}")
+    print(f"  Model size:           {efficiency['model_size_mb']} MB")
+    print(f"  Training time:        {efficiency['training_time_sec']}s ({efficiency['training_time_sec']/60:.1f} min)")
 
     # Confusion matrix plot
     plot_confusion_matrix(results["confusion_matrix"], class_names)
+
+    # Save misclassified examples plot
+    plot_misclassified_examples(model, test_loader, device, class_names, num_examples=12)
 
     # Save complete results to JSON
     all_results = {**results, **efficiency}
