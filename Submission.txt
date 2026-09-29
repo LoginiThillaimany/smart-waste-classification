@@ -1,0 +1,22 @@
+SE4050 – Deep Learning Assignment Submission
+=============================================
+
+Project Title: Smart Waste Classification using Deep Learning
+
+GitHub Repository: https://github.com/LoginiThillaimany/smart-waste-classification.git
+
+YouTube Video: https://youtu.be/KflWbiMaXiE
+
+Dataset: Garbage Classification Dataset
+        https://www.kaggle.com/datasets/mostafaabla/garbage-classification
+
+Group Members:
+-------------------------------------------------
+| Index Number | Member Name    |
+-------------------------------------------------
+| IT23276628   | V. Shivaanica  |
+| IT23410718   | T. Logini      |
+| IT23297586   | S. Niranjan    |
+-------------------------------------------------
+
+Submission Date: 29 September 2026
