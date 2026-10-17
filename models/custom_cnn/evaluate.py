@@ -10,6 +10,9 @@ Usage:
     python models/custom_cnn/evaluate.py
 """
 
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 import json
 import sys
 from pathlib import Path
@@ -19,7 +22,7 @@ import numpy as np
 import seaborn as sns
 import torch
 
-# Add project root to path
+# Add project root directory to path to import metrics and model modules
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from evaluation.metrics import evaluate_model, summarize_efficiency
@@ -27,16 +30,16 @@ from models.custom_cnn.config import BATCH_SIZE, BEST_MODEL_PATH, CHECKPOINT_DIR
 from models.custom_cnn.custom_cnn_model import CustomCNN
 from preprocessing.preprocess import get_loaders
 
-# Output directories
+# Output directory for saving figures
 FIG_DIR = Path("results/figures")
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def plot_learning_curves(history: dict, save_dir: Path = FIG_DIR) -> None:
-    """Plot and save training/validation accuracy and loss curves."""
+    """Plot and save training vs validation accuracy and loss curves."""
     epochs = range(1, len(history["train_loss"]) + 1)
 
-    # --- Accuracy ---
+    # --- Plot Accuracy Curves ---
     plt.figure(figsize=(8, 5))
     plt.plot(epochs, history["train_acc"], label="Train Accuracy", marker="o", markersize=3)
     plt.plot(epochs, history["val_acc"], label="Validation Accuracy", marker="s", markersize=3)
@@ -50,7 +53,7 @@ def plot_learning_curves(history: dict, save_dir: Path = FIG_DIR) -> None:
     plt.close()
     print(f"Saved: {save_dir / 'custom_cnn_accuracy.png'}")
 
-    # --- Loss ---
+    # --- Plot Loss Curves ---
     plt.figure(figsize=(8, 5))
     plt.plot(epochs, history["train_loss"], label="Train Loss", marker="o", markersize=3)
     plt.plot(epochs, history["val_loss"], label="Validation Loss", marker="s", markersize=3)
@@ -66,7 +69,7 @@ def plot_learning_curves(history: dict, save_dir: Path = FIG_DIR) -> None:
 
 
 def plot_confusion_matrix(cm: list, class_names: list, save_dir: Path = FIG_DIR) -> None:
-    """Plot and save the confusion matrix as a heatmap."""
+    """Plot and save the test set confusion matrix as a heatmap."""
     cm_array = np.array(cm)
     plt.figure(figsize=(8, 6))
     sns.heatmap(
@@ -84,22 +87,23 @@ def plot_confusion_matrix(cm: list, class_names: list, save_dir: Path = FIG_DIR)
 
 def evaluate():
     """Load best model, evaluate on test set, save results and plots."""
+    # Check for GPU device
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using device: {device}")
 
-    # Load data
+    # Load test set data loader
     _, _, test_loader, class_names = get_loaders(batch_size=BATCH_SIZE)
     print(f"Test set size: {len(test_loader.dataset)}")
 
-    # Load model
+    # Instantiate model and load the best saved checkpoint weights
     model = CustomCNN(num_classes=NUM_CLASSES).to(device)
     model.load_state_dict(torch.load(BEST_MODEL_PATH, map_location=device, weights_only=True))
     print(f"Loaded best model from {BEST_MODEL_PATH}")
 
-    # Evaluate using shared metrics module
+    # Run evaluation across the test set using the shared metrics module
     results = evaluate_model(model, test_loader, device, class_names)
 
-    # Print results
+    # Print summary test performance
     print(f"\n{'='*50}")
     print("Custom CNN — Test Set Results")
     print(f"{'='*50}")
@@ -110,7 +114,7 @@ def evaluate():
     print(f"  ROC-AUC:   {results['roc_auc']}")
     print(f"  Inference: {results['inference_time_per_image_sec']*1000:.2f} ms/image")
 
-    # Load training history for learning curves and efficiency
+    # Load saved training history to plot curves and read total training time
     history_path = Path(CHECKPOINT_DIR) / "training_history.json"
     if history_path.exists():
         with open(history_path) as f:
@@ -121,20 +125,20 @@ def evaluate():
         print("Warning: training_history.json not found — skipping learning curves.")
         training_time = 0
 
-    # Efficiency metrics
+    # Calculate model efficiency metrics (parameter count, model size in MB)
     efficiency = summarize_efficiency(model, training_time)
     print(f"\n  Parameters: {efficiency['parameter_count']:,}")
     print(f"  Model size: {efficiency['model_size_mb']} MB")
     print(f"  Training time: {efficiency['training_time_sec']}s")
 
-    # Confusion matrix plot
+    # Generate confusion matrix heatmap plot
     plot_confusion_matrix(results["confusion_matrix"], class_names)
 
-    # Save complete results to JSON
+    # Combine test results and efficiency metrics into a single dictionary
     all_results = {**results, **efficiency}
-    # Convert numpy types for JSON serialization
     all_results["confusion_matrix"] = results["confusion_matrix"]
 
+    # Save comprehensive results to JSON file
     results_path = Path("models/custom_cnn/results.json")
     with open(results_path, "w") as f:
         json.dump(all_results, f, indent=2, default=str)
@@ -143,5 +147,6 @@ def evaluate():
     return all_results
 
 
+# Execute evaluation when script is run directly
 if __name__ == "__main__":
     evaluate()

@@ -30,6 +30,9 @@ Design rationale:
       LogSoftmax internally, which is numerically more stable.
 """
 
+# ---------------------------------------------------------------------------
+# Imports
+# ---------------------------------------------------------------------------
 import torch
 import torch.nn as nn
 
@@ -47,75 +50,80 @@ class CustomCNN(nn.Module):
     def __init__(self, num_classes: int = 6):
         super().__init__()
 
-        # ---------- Convolutional feature extractor ----------
+        # ---------- Feature Extractor (4 Convolutional Blocks) ----------
         self.features = nn.Sequential(
-            # Block 1: 3 → 32 channels
-            nn.Conv2d(3, 32, kernel_size=3, padding=1),
-            nn.BatchNorm2d(32),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
+            # Block 1: Extracts low-level features like edges and basic shapes (3 -> 32 channels)
+            nn.Conv2d(3, 32, kernel_size=3, padding=1),  # 3 input channels (RGB) to 32 feature maps
+            nn.BatchNorm2d(32),                          # Normalizes batch activations for stable training
+            nn.ReLU(inplace=True),                       # Non-linear activation function
+            nn.MaxPool2d(kernel_size=2, stride=2),       # Downsamples spatial size by 2x (224 -> 112)
 
-            # Block 2: 32 → 64 channels
+            # Block 2: Learns simple textures and corners (32 -> 64 channels)
             nn.Conv2d(32, 64, kernel_size=3, padding=1),
             nn.BatchNorm2d(64),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.MaxPool2d(kernel_size=2, stride=2),       # Downsamples spatial size by 2x (112 -> 56)
 
-            # Block 3: 64 → 128 channels
+            # Block 3: Learns complex textures and object parts (64 -> 128 channels)
             nn.Conv2d(64, 128, kernel_size=3, padding=1),
             nn.BatchNorm2d(128),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.MaxPool2d(kernel_size=2, stride=2),       # Downsamples spatial size by 2x (56 -> 28)
 
-            # Block 4: 128 → 256 channels
+            # Block 4: Learns high-level semantic patterns (128 -> 256 channels)
             nn.Conv2d(128, 256, kernel_size=3, padding=1),
             nn.BatchNorm2d(256),
             nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.MaxPool2d(kernel_size=2, stride=2),       # Downsamples spatial size by 2x (28 -> 14)
         )
 
-        # Collapse spatial dims to 1×1 regardless of input size
+        # Global average pooling: reduces spatial dimensions to 1x1 regardless of input size
         self.pool = nn.AdaptiveAvgPool2d((1, 1))
 
-        # ---------- Classifier head ----------
+        # ---------- Classifier Head (Fully Connected Layers) ----------
         self.classifier = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(256, 512),
-            nn.ReLU(inplace=True),
-            nn.Dropout(0.5),
-            nn.Linear(512, 256),
-            nn.ReLU(inplace=True),
-            nn.Dropout(0.3),
-            nn.Linear(256, num_classes),
+            nn.Flatten(),                     # Flatten 2D feature map into 1D vector (256 elements)
+            nn.Linear(256, 512),              # First dense layer: 256 -> 512 units
+            nn.ReLU(inplace=True),            # Activation
+            nn.Dropout(0.5),                  # Drops 50% neurons to prevent overfitting
+            nn.Linear(512, 256),              # Second dense layer: 512 -> 256 units
+            nn.ReLU(inplace=True),            # Activation
+            nn.Dropout(0.3),                  # Drops 30% neurons
+            nn.Linear(256, num_classes),      # Final output layer: outputs raw logits for 6 classes
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Forward pass.
+        Forward pass through the network.
 
         Parameters
         ----------
         x : torch.Tensor
-            Input batch of shape (B, 3, H, W).
+            Input batch of images (Batch, Channels=3, Height=224, Width=224).
 
         Returns
         -------
         torch.Tensor
-            Raw logits of shape (B, num_classes).
+            Raw class logits (Batch, num_classes=6).
         """
-        x = self.features(x)
-        x = self.pool(x)
-        x = self.classifier(x)
+        x = self.features(x)    # Pass through 4 conv blocks
+        x = self.pool(x)        # Pool spatial dimensions to 1x1
+        x = self.classifier(x)  # Compute class logits via FC layers
         return x
 
 
 # ---------------------------------------------------------------------------
-# Quick sanity check
+# Sanity Check & Architecture Verification
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
+    # Instantiate the model with 6 classes
     model = CustomCNN(num_classes=6)
+
+    # Create dummy batch of 2 images (3 channels, 224x224 pixels)
     dummy = torch.randn(2, 3, 224, 224)
     out = model(dummy)
+
+    # Print output shape and parameter counts
     print(f"Output shape: {out.shape}")  # Expected: (2, 6)
     total_params = sum(p.numel() for p in model.parameters())
     trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
